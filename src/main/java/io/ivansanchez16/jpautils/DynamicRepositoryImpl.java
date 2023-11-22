@@ -16,7 +16,7 @@ import java.util.*;
  *
  * Clase para consultar por atributos dinámicamente
  */
-class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
+public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
 
     private final CriteriaBuilder cb;
 
@@ -28,7 +28,7 @@ class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     }
 
     @Override
-    public T persistWithoutQuery(T object) {
+    public T grabaWithoutQuery(T object) {
         entityManager.persist(object);
         return object;
     }
@@ -39,8 +39,8 @@ class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     }
 
     @Override
-    public PageQuery<T> findByParams(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root,
-                                     Class<T> clase, Class<K> keyClass)
+    public PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root,
+                                          Class<T> clase, Class<K> keyClass)
     {
         Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clase.getDeclaredFields());
         final List<K> firstElementsKeys = findFirstElements(whereParams, params, clase, keyClass);
@@ -57,16 +57,11 @@ class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     }
 
     @Override
-    public PageQuery<T> findByParams(Map<String, Object> params, Class<T> clase, Class<K> keyClass) {
+    public PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clase, Class<K> keyClass) {
         CriteriaQuery<Tuple> cQuery = cb.createTupleQuery();
         Root<T> root = cQuery.from(clase);
 
-        return findByParams(params, cQuery, root, clase, keyClass);
-    }
-
-    @Override
-    public Optional<T> findByIdWithJoins(K key, CriteriaQuery<T> cQuery, Root<T> root, Class<T> clase,  Class<K> keyClass) {
-        return Optional.empty();
+        return queryByAttributes(params, cQuery, root, clase, keyClass);
     }
 
     @SuppressWarnings("unchecked")

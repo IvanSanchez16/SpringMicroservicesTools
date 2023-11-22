@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ivansanchez16.generalutilery.LogFile;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 
 
@@ -15,23 +16,23 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-class MetaGenerator {
+public class MetaGenerator {
 
     private final AppConfig appConfig;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public Meta crearMetaObject(HttpStatus httpStatus) {
+    public Meta crearMetaObject(HttpStatusCode httpStatus) {
         final Meta meta = new Meta(httpStatus.toString(), httpStatus.value());
         return crearMeta(meta);
     }
 
-    public Meta crearMetaObject(HttpStatus httpStatus, String message) {
+    public Meta crearMetaObject(HttpStatusCode httpStatus, String message) {
         final Meta meta = new Meta(httpStatus.toString(), httpStatus.value(), message);
         return crearMeta(meta);
     }
 
-    public Meta crearMetaObject(HttpStatus httpStatus, String message, String devMessage) {
+    public Meta crearMetaObject(HttpStatusCode httpStatus, String message, String devMessage) {
         final Meta meta = new Meta(httpStatus.toString(), httpStatus.value(), message, devMessage);
         return crearMeta(meta);
     }

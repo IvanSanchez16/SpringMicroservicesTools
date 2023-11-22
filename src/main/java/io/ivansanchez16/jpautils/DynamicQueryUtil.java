@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.*;
 import java.lang.reflect.Field;
 import java.util.*;
 
+// TODO - Definir todos los nombres de los atributos
 @UtilityClass
 class DynamicQueryUtil {
 

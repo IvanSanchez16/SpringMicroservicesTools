@@ -9,7 +9,6 @@ import java.util.Arrays;
 
 @UtilityClass
 public class LogFile {
-
     private final Logger LOGGER = LogManager.getLogger(LogFile.class.getName());
 
     private final String SEPARADOR = "--------------------------------------------------";

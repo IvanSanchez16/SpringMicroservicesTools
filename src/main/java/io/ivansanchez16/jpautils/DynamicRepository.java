@@ -1,11 +1,9 @@
 package io.ivansanchez16.jpautils;
 
-
 import jakarta.persistence.Tuple;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Root;
 import java.util.Map;
-import java.util.Optional;
 
 public interface DynamicRepository<T, K> {
 
@@ -26,7 +24,7 @@ public interface DynamicRepository<T, K> {
      * @param keyClass La clase de la llave primaria de la entidad
      * @return Una página de la consulta ha realizar
      */
-    PageQuery<T> findByParams(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root, Class<T> clase,  Class<K> keyClass);
+    PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root, Class<T> clase, Class<K> keyClass);
 
     /**
      * Método que consulta de manera dinámica una tabla (entidad) por N atributos
@@ -36,9 +34,7 @@ public interface DynamicRepository<T, K> {
      * @param keyClass la clase de la llave primaria de la entidad
      * @return Una página de la consulta ha realizar
      */
-    PageQuery<T> findByParams(Map<String, Object> params, Class<T> clase, Class<K> keyClass);
-
-    Optional<T> findByIdWithJoins(K key, CriteriaQuery<T> cQuery, Root<T> root, Class<T> clase,  Class<K> keyClass);
+    PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clase, Class<K> keyClass);
 
     /**
      * Método que usa el persist del entityManager para evitar el select pre query del save
@@ -46,5 +42,5 @@ public interface DynamicRepository<T, K> {
      * @param object El objeto de la entidad a persistir
      * @return El objeto persistido
      */
-    T persistWithoutQuery(T object);
+    T grabaWithoutQuery(T object);
 }
