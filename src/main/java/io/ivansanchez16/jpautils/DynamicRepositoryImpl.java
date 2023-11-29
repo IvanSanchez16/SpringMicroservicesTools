@@ -10,12 +10,9 @@ import jakarta.persistence.metamodel.SingularAttribute;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 
-/**
- * DynamicRepositoryImpl
- *
- * Clase para consultar por atributos dinámicamente
- */
+
 public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
 
     private final CriteriaBuilder cb;
@@ -40,10 +37,10 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
 
     @Override
     public PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root,
-                                          Class<T> clase, Class<K> keyClass)
+                                          Class<T> clazz, Class<K> keyClass)
     {
-        Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clase.getDeclaredFields());
-        final List<K> firstElementsKeys = findFirstElements(whereParams, params, clase, keyClass);
+        Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clazz.getDeclaredFields());
+        final List<K> firstElementsKeys = findFirstElements(whereParams, params, clazz, keyClass);
         if (firstElementsKeys.isEmpty()) {
             return new PageQuery<>(0L, new ArrayList<>());
         }
@@ -51,17 +48,17 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
         cQuery.select( cb.tuple(root) );
         DynamicQueryUtil.addSortedValues(cb, cQuery, root, params);
 
-        final List<T> finalRows = findElementsWithJoin(firstElementsKeys, clase, cQuery, root);
+        final List<T> finalRows = findElementsWithJoin(firstElementsKeys, clazz, cQuery, root);
 
-        return new PageQuery<>(countElements(clase, whereParams), finalRows.stream().distinct().toList());
+        return new PageQuery<>(countElements(clazz, whereParams), finalRows.stream().distinct().toList());
     }
 
     @Override
-    public PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clase, Class<K> keyClass) {
+    public PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clazz, Class<K> keyClass) {
         CriteriaQuery<Tuple> cQuery = cb.createTupleQuery();
-        Root<T> root = cQuery.from(clase);
+        Root<T> root = cQuery.from(clazz);
 
-        return queryByAttributes(params, cQuery, root, clase, keyClass);
+        return queryByAttributes(params, cQuery, root, clazz, keyClass);
     }
 
     @SuppressWarnings("unchecked")
@@ -121,9 +118,9 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
             if (whereParam.getField().getType().equals(LocalDateTime.class)) {
                 Path<LocalDateTime> dateTimePath = (Path<LocalDateTime>) path;
 
-                // Si es fecha se puede consultar si es un día específico o es/no es Null
+                // If the attribute is for date there is two ways
                 if (whereParam.getValue() instanceof Boolean) {
-                    // Estamos validando si el campo fecha es null o no
+                    // Validate for null date columns
                     if (Boolean.TRUE.equals( whereParam.getValue() )) {
                         predicates.add( cb.isNotNull(path) );
                     } else {
@@ -131,7 +128,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
                     }
                     return;
                 } else {
-                    // Validamos que la fecha este en un rango
+                    // Validation for date range
                     final String strBeginOfDay = String.format("%sT00:00:00", whereParam.getValue());
                     final String strEndOfDay = String.format("%sT23:59:59", whereParam.getValue());
 
@@ -143,7 +140,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
                 }
             }
 
-            if (whereParam instanceof List) {
+            if (whereParam.getValue() instanceof List) {
                 CriteriaBuilder.In<Object> corePredicateIn = cb.in( path );
                 ((List<Object>) whereParam.getValue()).forEach(corePredicateIn::value);
 

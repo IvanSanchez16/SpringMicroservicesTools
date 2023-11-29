@@ -8,7 +8,7 @@ import jakarta.persistence.criteria.*;
 import java.lang.reflect.Field;
 import java.util.*;
 
-// TODO - Definir todos los nombres de los atributos
+
 @UtilityClass
 class DynamicQueryUtil {
 
@@ -65,7 +65,7 @@ class DynamicQueryUtil {
 
             String newAttribute = attribute;
 
-            // Para campos de fecha se quiere saber si son NULL
+            // If you ask with 'is-' to a date attribute, validate if its null or not
             if (attribute.contains("is-")) {
                 newAttribute = attribute.replace("is-", "") + "At";
                 flagNullable = true;
@@ -80,15 +80,33 @@ class DynamicQueryUtil {
             if (field == null) return;
 
             if (flagNullable){
-                // Se manda null cuando se valida si es null o no el valor
+                // Validation for if date is null
                 preparedMap.put(newAttribute, new WhereParams(field, isNull));
             } else if (value.toString().contains(",")) {
-                List<Object> values = List.of(value.toString().split(","));
-                values = listCastTo(field.getType(), values);
+                // Validation for multiple values separates with commas
+                try {
+                    List<Object> values = List.of(value.toString().split(","));
+                    values = listCastTo(field.getType(), values);
 
-                preparedMap.put(newAttribute, new WhereParams(field, values));
+                    preparedMap.put(newAttribute, new WhereParams(field, values));
+                } catch (Exception e) {
+                    throw new InvalidValueException(
+                            String.format("One of the values for %s cannot be converted to the attribute type", attribute),
+                            field.getName(),
+                            value.toString(),
+                            attribute);
+                }
             } else {
-                preparedMap.put(newAttribute, new WhereParams(field, castTo(field.getType(), value)));
+                // Standard validation
+                try {
+                    preparedMap.put(newAttribute, new WhereParams(field, castTo(field.getType(), value)));
+                } catch (Exception e) {
+                    throw new InvalidValueException(
+                            String.format("The provided value for %s cannot be converted to the attribute type", attribute),
+                            field.getName(),
+                            value.toString(),
+                            attribute);
+                }
             }
         });
 

@@ -8,39 +8,45 @@ import java.util.Map;
 public interface DynamicRepository<T, K> {
 
     /**
-     * Método que regresa la CriteriaQuery para generar una consulta con joins
+     * Method for generate a CriteriaQuery to use on queryByAttributes
      *
-     * @return Un objeto de CriteriaQuery de tipo Tuple
+     * @return A CriteriaQuery object created with entityManager
      */
     CriteriaQuery<Tuple> generateQuery();
 
     /**
-     * Método que consulta de manera dinámica una tabla (entidad) por N atributos
+     * Generate a query based on a Map. Takes the Map keys to add WHERE, ORDER BY and Pageable options to the query
      *
-     * @param params Un map donde las key son los nombres de los atributos y los values los valores para armar WHERE
-     * @param clase La clase de la entidad la cual se está realizando la consulta
-     * @param cQuery El objeto de CriteriaQuery con los joins
-     * @param root El objeto de Root con los joins
-     * @param keyClass La clase de la llave primaria de la entidad
-     * @return Una página de la consulta ha realizar
+     * @param params A Map object to get the WHERE params, ORDER BY attributes and Pagination configuration
+     * @param clazz The class object of entity (T)
+     * @param cQuery The CriteriaQuery object previous generated
+     * @param root The Root object with JOINS
+     * @param keyClass The class object of entity key (K)
+     *
+     * @throws InvalidValueException When the values for attributes provided to construct the query cannot be cast
+     * to their value
+     * @return A PageQuery object with the query result
      */
-    PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root, Class<T> clase, Class<K> keyClass);
+    PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root, Class<T> clazz, Class<K> keyClass);
 
     /**
-     * Método que consulta de manera dinámica una tabla (entidad) por N atributos
+     * Generate a query based on a Map. Takes the Map keys to add WHERE, ORDER BY and Pageable options to the query
      *
-     * @param params Un map donde las key son los nombres de los atributos y los values los valores para armar WHERE
-     * @param clase La clase de la entidad la cual se está realizando la consulta
-     * @param keyClass la clase de la llave primaria de la entidad
-     * @return Una página de la consulta ha realizar
+     * @param params A Map object to get the WHERE params, ORDER BY attributes and Pagination configuration
+     * @param clazz The class object of entity (T)
+     * @param keyClass The class object of entity key (K)
+     *
+     * @throws InvalidValueException When the values for attributes provided to construct the query cannot be cast
+     * to their value
+     * @return A PageQuery object with the query result
      */
-    PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clase, Class<K> keyClass);
+    PageQuery<T> queryByAttributes(Map<String, Object> params, Class<T> clazz, Class<K> keyClass);
 
     /**
-     * Método que usa el persist del entityManager para evitar el select pre query del save
+     * Use entityManager persist method to persist an entity without select query
      *
-     * @param object El objeto de la entidad a persistir
-     * @return El objeto persistido
+     * @param object The entity object to persist
+     * @return The same object
      */
     T grabaWithoutQuery(T object);
 }

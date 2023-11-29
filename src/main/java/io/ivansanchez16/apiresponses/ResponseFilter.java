@@ -23,8 +23,6 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 /**
  * ResponseFilter
  */
-@Component
-@RequiredArgsConstructor
 public class ResponseFilter implements Filter {
 
     private final Logger LOGGER = LogManager.getLogger(ResponseFilter.class.getName());

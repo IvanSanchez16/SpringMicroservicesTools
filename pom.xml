@@ -9,14 +9,14 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.ivansanchez16</groupId>
-	<artifactId>spring-microservices-utilery</artifactId>
-	<version>1.0.0</version>
-	<name>spring-microservices-utilery</name>
-	<description>Utilery classes for develop of microservices</description>
+	<artifactId>spring-microservices-tools</artifactId>
+	<version>0.1.1</version>
+	<name>spring-microservices-tools</name>
+	<description>Utility classes for develop of microservices</description>
 
-	<url>https://github.com/IvanSanchez16/SpringMicroservicesUtilery</url>
+	<url>https://github.com/IvanSanchez16/SpringMicroservicesTools</url>
 	<scm>
-		<url>https://github.com/IvanSanchez16/SpringMicroservicesUtilery.git</url>
+		<url>https://github.com/IvanSanchez16/SpringMicroservicesTools.git</url>
 	</scm>
 	<licenses>
 		<license>
@@ -64,6 +64,16 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>**/*.imports</include>
+				</includes>
+			</resource>
+		</resources>
+
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

@@ -4,21 +4,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ivansanchez16.generalutilery.LogFile;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
-import org.springframework.stereotype.Component;
-
 
 /**
  * MetaGenerator
  * Contiene metodos para implementar la meta correcta y devolver el campo devMessage solamente cuando no sea ambiente
  * productivo
  */
-@Component
 @RequiredArgsConstructor
 public class MetaGenerator {
 
-    private final AppConfig appConfig;
+    private final EnvironmentConfig environmentConfig;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -41,9 +37,9 @@ public class MetaGenerator {
         try {
             final String metaString = objectMapper.writeValueAsString(meta);
 
-            String env = appConfig.getEnvironment();
+            Environment env = Environment.getByValue( environmentConfig.getEnvironment() );
 
-            if (env.equals("production")){
+            if ( env != null && env.equals(Environment.PRODUCTION) ){
                 return objectMapper.readerWithView(MetaView.External.class)
                         .forType(Meta.class)
                         .readValue(metaString);
