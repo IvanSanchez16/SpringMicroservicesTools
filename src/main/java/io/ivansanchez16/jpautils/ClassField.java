@@ -11,9 +11,8 @@ import java.lang.reflect.Field;
 @NoArgsConstructor
 @Getter
 @Setter
-class WhereParams {
+public class ClassField {
 
     private String path;
     private Field field;
-    private Object value;
 }

@@ -1,5 +1,8 @@
 package io.ivansanchez16.jpautils;
 
+import io.ivansanchez16.jpautils.annotations.ExtractAttributes;
+import io.ivansanchez16.jpautils.annotations.UseSoftDelete;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Tuple;
 import lombok.experimental.UtilityClass;
 
@@ -56,7 +59,25 @@ class DynamicQueryUtil {
         query.setMaxResults( pageSize );
     }
 
-    Map<String, WhereParams> prepareWhereParams(Map<String, Object> original, Field[] classFields) {
+    List<ClassField> getFields(String prefix, Class<?> clazz) {
+        final Field[] baseFields = clazz.getDeclaredFields();
+        final List<ClassField> finalFields = new ArrayList<>(baseFields.length + 10);
+
+        for (Field field : baseFields) {
+            if (field.isAnnotationPresent(Embedded.class) || field.isAnnotationPresent(ExtractAttributes.class)) {
+                String newPrefix = String.format("%s%s.", prefix, field.getName());
+                finalFields.addAll( getFields( newPrefix, field.getType() ) );
+                continue;
+            }
+
+            finalFields.add(new ClassField(String.format("%s%s", prefix, field.getName()), field));
+        }
+
+        return finalFields;
+    }
+
+    Map<String, WhereParams> prepareWhereParams(Map<String, Object> original, Class<?> clazz) {
+        final List<ClassField> classFields = getFields("", clazz);
         Map<String, WhereParams> preparedMap = new HashMap<>();
 
         original.forEach((attribute, value) -> {
@@ -65,7 +86,7 @@ class DynamicQueryUtil {
 
             String newAttribute = attribute;
 
-            // If you ask with 'is-' to a date attribute, validate if its null or not
+            // If you ask with 'is-' to a date attribute, validate if it's null or not
             if (attribute.contains("is-")) {
                 newAttribute = attribute.replace("is-", "") + "At";
                 flagNullable = true;
@@ -76,44 +97,47 @@ class DynamicQueryUtil {
                 newAttribute = cleanAttribute(newAttribute);
             }
 
-            final Field field = findByName(classFields, newAttribute);
+            final ClassField field = findByName(classFields, newAttribute);
             if (field == null) return;
 
             if (flagNullable){
                 // Validation for if date is null
-                preparedMap.put(newAttribute, new WhereParams(field, isNull));
+                preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), isNull));
             } else if (value.toString().contains(",")) {
                 // Validation for multiple values separates with commas
                 try {
                     List<Object> values = List.of(value.toString().split(","));
-                    values = listCastTo(field.getType(), values);
+                    values = listCastTo(field.getField().getType(), values);
 
-                    preparedMap.put(newAttribute, new WhereParams(field, values));
+                    preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), values));
                 } catch (Exception e) {
                     throw new InvalidValueException(
                             String.format("One of the values for %s cannot be converted to the attribute type", attribute),
-                            field.getName(),
+                            field.getField().getName(),
                             value.toString(),
                             attribute);
                 }
             } else {
                 // Standard validation
                 try {
-                    preparedMap.put(newAttribute, new WhereParams(field, castTo(field.getType(), value)));
+                    preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), castTo(field.getField().getType(), value)));
                 } catch (Exception e) {
                     throw new InvalidValueException(
                             String.format("The provided value for %s cannot be converted to the attribute type", attribute),
-                            field.getName(),
+                            field.getField().getName(),
                             value.toString(),
                             attribute);
                 }
             }
         });
 
-        // Si la tabla maneja SoftDelete y no se especificó una búsqueda, agrega al filtrado que no estén eliminados
-        final Field field = findByName(classFields, DELETED_AT);
-        if (field != null) {
-            preparedMap.computeIfAbsent(DELETED_AT, key -> new WhereParams(field, false));
+        // If the table contains UseSoftDelete annotation includes in where params this attribute needs to be NULL
+        if (clazz.isAnnotationPresent(UseSoftDelete.class)) {
+            UseSoftDelete annotation = clazz.getAnnotation(UseSoftDelete.class);
+            final ClassField field = findByName(classFields, annotation.attribute());
+            if (field != null) {
+                preparedMap.computeIfAbsent(DELETED_AT, key -> new WhereParams(field.getPath(), field.getField(), false));
+            }
         }
 
         return preparedMap;
@@ -137,15 +161,15 @@ class DynamicQueryUtil {
         return groupPathList(root.get(attribute), pathList);
     }
 
-    private Field findByName(Field[] fields, String name) {
+    private ClassField findByName(List<ClassField> fields, String name) {
         String[] attributeList = name.split("\\.");
         String attributeName = attributeList[0];
 
-        for (Field field : fields) {
-            if (field.getName().equalsIgnoreCase(attributeName)) {
+        for (ClassField field : fields) {
+            if (field.getField().getName().equalsIgnoreCase(attributeName)) {
                 if (attributeList.length > 1) {
                     final String restOfString = name.substring( name.indexOf(attributeName)+attributeName.length()+1 );
-                    return findByName(field.getType().getDeclaredFields(), restOfString);
+                    return findByName( getFields(attributeName + ".", field.getField().getType()) , restOfString);
                 } else {
                     return field;
                 }

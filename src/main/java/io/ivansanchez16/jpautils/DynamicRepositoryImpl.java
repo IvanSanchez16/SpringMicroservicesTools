@@ -39,7 +39,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     public PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root,
                                           Class<T> clazz, Class<K> keyClass)
     {
-        Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clazz.getDeclaredFields());
+        Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clazz);
         final List<K> firstElementsKeys = findFirstElements(whereParams, params, clazz, keyClass);
         if (firstElementsKeys.isEmpty()) {
             return new PageQuery<>(0L, new ArrayList<>());
@@ -112,7 +112,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
         List<Predicate> predicates = new ArrayList<>();
 
         whereParams.forEach((attribute, whereParam) -> {
-            String[] paths = attribute.split("\\.");
+            String[] paths = whereParam.getPath().split("\\.");
             Path<T> path = DynamicQueryUtil.groupPathList( root, new ArrayList<>(List.of(paths)) );
 
             if (whereParam.getField().getType().equals(LocalDateTime.class)) {
