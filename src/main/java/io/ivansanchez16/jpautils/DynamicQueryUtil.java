@@ -10,11 +10,14 @@ import jakarta.persistence.Query;
 import jakarta.persistence.criteria.*;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @UtilityClass
 class DynamicQueryUtil {
 
+    private final String COMPARATOR_REGEX = "^[a-zA-z_\\-]+-(gt|gte|eq|lt|lte)$";
     private final String DELETED_AT = "deletedAt";
 
     <T> void addSortedValues(CriteriaBuilder cb, CriteriaQuery<Tuple> criteriaQuery, Root<T> root, Map<String, Object> params) {
@@ -76,15 +79,28 @@ class DynamicQueryUtil {
         return finalFields;
     }
 
-    Map<String, WhereParams> prepareWhereParams(Map<String, Object> original, Class<?> clazz) {
+    Map<String, WhereParam> prepareWhereParams(Map<String, Object> original, Class<?> clazz) {
         final List<ClassField> classFields = getFields("", clazz);
-        Map<String, WhereParams> preparedMap = new HashMap<>();
+        Map<String, WhereParam> preparedMap = new HashMap<>();
 
         original.forEach((attribute, value) -> {
+            Operator operator = null;
             boolean flagNullable = false;
             boolean isNull = false;
 
             String newAttribute = attribute;
+
+            if (Pattern.matches(COMPARATOR_REGEX, newAttribute)) {
+                String[] tokens = newAttribute.split("-");
+                String operatorToken = tokens[tokens.length-1];
+
+                operator = Operator.getByPostfix( operatorToken );
+                newAttribute = newAttribute.substring(0, newAttribute.length() - operatorToken.length() - 1);
+            }
+
+            if (operator == null) {
+                operator = Operator.EQUAL;
+            }
 
             // If you ask with 'is-' to a date attribute, validate if it's null or not
             if (attribute.contains("is-")) {
@@ -102,14 +118,14 @@ class DynamicQueryUtil {
 
             if (flagNullable){
                 // Validation for if date is null
-                preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), isNull));
+                preparedMap.put(newAttribute, new WhereParam(field.getPath(), field.getField(), isNull, operator));
             } else if (value.toString().contains(",")) {
                 // Validation for multiple values separates with commas
                 try {
                     List<Object> values = List.of(value.toString().split(","));
                     values = listCastTo(field.getField().getType(), values);
 
-                    preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), values));
+                    preparedMap.put(newAttribute, new WhereParam(field.getPath(), field.getField(), values, operator));
                 } catch (Exception e) {
                     throw new InvalidValueException(
                             String.format("One of the values for %s cannot be converted to the attribute type", attribute),
@@ -120,7 +136,7 @@ class DynamicQueryUtil {
             } else {
                 // Standard validation
                 try {
-                    preparedMap.put(newAttribute, new WhereParams(field.getPath(), field.getField(), castTo(field.getField().getType(), value)));
+                    preparedMap.put(newAttribute, new WhereParam(field.getPath(), field.getField(), castTo(field.getField().getType(), value), operator));
                 } catch (Exception e) {
                     throw new InvalidValueException(
                             String.format("The provided value for %s cannot be converted to the attribute type", attribute),
@@ -136,7 +152,7 @@ class DynamicQueryUtil {
             UseSoftDelete annotation = clazz.getAnnotation(UseSoftDelete.class);
             final ClassField field = findByName(classFields, annotation.attribute());
             if (field != null) {
-                preparedMap.computeIfAbsent(DELETED_AT, key -> new WhereParams(field.getPath(), field.getField(), false));
+                preparedMap.computeIfAbsent(DELETED_AT, key -> new WhereParam(field.getPath(), field.getField(), false, Operator.EQUAL));
             }
         }
 
@@ -152,7 +168,7 @@ class DynamicQueryUtil {
         return cb.and(predicate, groupPredicateList(cb, predicateList));
     }
 
-    <T> Path<T> groupPathList(Path<T> root, List<String> pathList) {
+    Path<?> groupPathList(Path<?> root, List<String> pathList) {
         final String attribute = pathList.remove(0);
         if (pathList.isEmpty()) {
             return root.get(attribute);

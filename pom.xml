@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.ivansanchez16</groupId>
 	<artifactId>spring-microservices-tools</artifactId>
-	<version>0.1.2</version>
+	<version>0.1.3</version>
 	<name>spring-microservices-tools</name>
 	<description>Utility classes for develop of microservices</description>
 

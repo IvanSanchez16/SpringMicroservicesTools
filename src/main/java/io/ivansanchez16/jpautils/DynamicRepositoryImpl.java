@@ -10,8 +10,6 @@ import jakarta.persistence.metamodel.SingularAttribute;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Supplier;
-
 
 public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
 
@@ -39,7 +37,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     public PageQuery<T> queryByAttributes(Map<String, Object> params, CriteriaQuery<Tuple> cQuery, Root<T> root,
                                           Class<T> clazz, Class<K> keyClass)
     {
-        Map<String, WhereParams> whereParams = DynamicQueryUtil.prepareWhereParams(params, clazz);
+        Map<String, WhereParam> whereParams = DynamicQueryUtil.prepareWhereParams(params, clazz);
         final List<K> firstElementsKeys = findFirstElements(whereParams, params, clazz, keyClass);
         if (firstElementsKeys.isEmpty()) {
             return new PageQuery<>(0L, new ArrayList<>());
@@ -62,7 +60,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
     }
 
     @SuppressWarnings("unchecked")
-    private List<K> findFirstElements(Map<String, WhereParams> whereParams, Map<String, Object> params, Class<T> clase, Class<K> keyClass) {
+    private List<K> findFirstElements(Map<String, WhereParam> whereParams, Map<String, Object> params, Class<T> clase, Class<K> keyClass) {
         CriteriaQuery<Tuple> cQuery = cb.createTupleQuery();
         Root<T> root = cQuery.from(clase);
         cQuery.select( cb.tuple( root.get(getIdProperty(clase)) ) );
@@ -94,7 +92,7 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
                 .toList();
     }
 
-    private Long countElements(Class<T> clase, Map<String, WhereParams> whereParams) {
+    private Long countElements(Class<T> clase, Map<String, WhereParam> whereParams) {
         CriteriaQuery<Long> cQuery = cb.createQuery(Long.class);
         Root<T> root = cQuery.from(clase);
         cQuery.select( cb.count(root) );
@@ -107,50 +105,62 @@ public class DynamicRepositoryImpl<T, K> implements DynamicRepository<T, K> {
         return entityManager.createQuery(cQuery).getSingleResult();
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Predicate> getPredicates(Path<T> root, Map<String, WhereParams> whereParams) {
+    private List<Predicate> getPredicates(Path<T> root, Map<String, WhereParam> whereParams) {
         List<Predicate> predicates = new ArrayList<>();
 
-        whereParams.forEach((attribute, whereParam) -> {
-            String[] paths = whereParam.getPath().split("\\.");
-            Path<T> path = DynamicQueryUtil.groupPathList( root, new ArrayList<>(List.of(paths)) );
-
-            if (whereParam.getField().getType().equals(LocalDateTime.class)) {
-                Path<LocalDateTime> dateTimePath = (Path<LocalDateTime>) path;
-
-                // If the attribute is for date there is two ways
-                if (whereParam.getValue() instanceof Boolean) {
-                    // Validate for null date columns
-                    if (Boolean.TRUE.equals( whereParam.getValue() )) {
-                        predicates.add( cb.isNotNull(path) );
-                    } else {
-                        predicates.add( cb.isNull(path) );
-                    }
-                    return;
-                } else {
-                    // Validation for date range
-                    final String strBeginOfDay = String.format("%sT00:00:00", whereParam.getValue());
-                    final String strEndOfDay = String.format("%sT23:59:59", whereParam.getValue());
-
-                    final LocalDateTime beginOfDay = LocalDateTime.parse(strBeginOfDay);
-                    final LocalDateTime endOfDay = LocalDateTime.parse(strEndOfDay);
-
-                    predicates.add( cb.between(dateTimePath, beginOfDay, endOfDay) );
-                    return;
-                }
-            }
-
-            if (whereParam.getValue() instanceof List) {
-                CriteriaBuilder.In<Object> corePredicateIn = cb.in( path );
-                ((List<Object>) whereParam.getValue()).forEach(corePredicateIn::value);
-
-                predicates.add(corePredicateIn);
-            } else {
-                predicates.add( cb.equal(path , whereParam.getValue()) );
-            }
-        });
+        whereParams.forEach((attribute, whereParam) -> addPredicate(root, predicates, whereParam));
 
         return predicates;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <Y extends Comparable<? super Y>> void addPredicate(Path<T> root,
+                                        List<Predicate> predicates, WhereParam whereParam)
+    {
+        String[] paths = whereParam.getPath().split("\\.");
+        Path<Y> path =
+                (Path<Y>) DynamicQueryUtil.groupPathList( root, new ArrayList<>(List.of(paths)) );
+
+        if (whereParam.getField().getType().equals(LocalDateTime.class)) {
+            Path<LocalDateTime> dateTimePath = (Path<LocalDateTime>) path;
+
+            // If the attribute is for date there is two ways
+            if (whereParam.getValue() instanceof Boolean) {
+                // Validate for null date columns
+                if (Boolean.TRUE.equals( whereParam.getValue() )) {
+                    predicates.add( cb.isNotNull(path) );
+                } else {
+                    predicates.add( cb.isNull(path) );
+                }
+            } else {
+                // Validation for date range
+                final String strBeginOfDay = String.format("%sT00:00:00", whereParam.getValue());
+                final String strEndOfDay = String.format("%sT23:59:59", whereParam.getValue());
+
+                final LocalDateTime beginOfDay = LocalDateTime.parse(strBeginOfDay);
+                final LocalDateTime endOfDay = LocalDateTime.parse(strEndOfDay);
+
+                predicates.add( cb.between(dateTimePath, beginOfDay, endOfDay) );
+            }
+            return;
+        }
+
+        if (whereParam.getValue() instanceof List) {
+            CriteriaBuilder.In<Object> corePredicateIn = cb.in( path );
+            ((List<Object>) whereParam.getValue()).forEach(corePredicateIn::value);
+
+            predicates.add(corePredicateIn);
+            return;
+        }
+
+        Y value = (Y) whereParam.getValue();
+        switch (whereParam.getOperator()) {
+            case GREATER_THAN -> predicates.add( cb.greaterThan(path, value) );
+            case LESS_THAN -> predicates.add( cb.lessThan(path, value) );
+            case EQUAL -> predicates.add( cb.equal(path, whereParam.getValue()) );
+            case GREATER_THAN_EQUAL -> predicates.add( cb.greaterThanOrEqualTo(path, value) );
+            case LESS_THAN_EQUAL -> predicates.add( cb.lessThanOrEqualTo(path, value) );
+        }
     }
 
     @SuppressWarnings("unchecked")
