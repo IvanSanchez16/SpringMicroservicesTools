@@ -9,5 +9,9 @@ class WebService {
 
     private final String name;
     private final String url;
+
+    // Optionals
     private final Boolean useProxy;
+    private final Integer connectionTimeout;
+    private final Integer responseTimeout;
 }

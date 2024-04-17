@@ -1,4 +1,4 @@
-package io.ivansanchez16.apiresponses.webclient;
+package io.ivansanchez16.apiresponses.webclient.exceptions;
 
 public class MissingPropertiesException extends RuntimeException {
 

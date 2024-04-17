@@ -1,23 +1,15 @@
 package io.ivansanchez16.apiresponses;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 
-/**
- * ApiResponseDTO
- */
-@AllArgsConstructor
-@NoArgsConstructor
-@Data
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class ApiResponseDTO<T> {
+public class ApiResponseDTO<T> extends ResponseEntity<ApiBodyDTO<T>> {
 
-    private Meta meta;
-    private T data;
+    public ApiResponseDTO(Meta meta, T data) {
+        super(new ApiBodyDTO<>(meta, data), HttpStatusCode.valueOf( meta.getStatusCode() ));
+    }
 
     public ApiResponseDTO(Meta meta) {
-        this.meta = meta;
+        super(new ApiBodyDTO<>(meta, null), HttpStatusCode.valueOf( meta.getStatusCode() ));
     }
 }

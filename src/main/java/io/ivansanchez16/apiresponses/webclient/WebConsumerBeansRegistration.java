@@ -1,5 +1,7 @@
 package io.ivansanchez16.apiresponses.webclient;
 
+import io.ivansanchez16.apiresponses.webclient.exceptions.MissingPropertiesException;
+import io.netty.channel.ChannelOption;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
@@ -15,6 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import reactor.netty.transport.ProxyProvider;
 
+import java.time.Duration;
 import java.util.List;
 
 public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostProcessor {
@@ -37,10 +40,10 @@ public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostP
 
         this.proxyHost = Binder.get(environment)
                 .bind(PROXY_PROPERTIES_PREFIX+".host", Bindable.of(String.class))
-                .orElseThrow(() -> new MissingPropertiesException("The proxy.host property is missing"));
+                .orElse("");
         this.proxyPort = Binder.get(environment)
                 .bind(PROXY_PROPERTIES_PREFIX+".port", Bindable.of(String.class))
-                .orElseThrow(() -> new MissingPropertiesException("The proxy.port property is missing"));
+                .orElse("");
 
         this.builder = builder;
     }
@@ -48,29 +51,43 @@ public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostP
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         for (WebService webService : webServices) {
+            if (webService.getName() == null || webService.getUrl() == null) {
+                continue;
+            }
+
             GenericBeanDefinition beanDefinition = new GenericBeanDefinition();
 
             beanDefinition.setBeanClass(WebClient.class);
 
-            if (Boolean.TRUE.equals(webService.getUseProxy())) {
-                HttpClient httpClient =
-                        HttpClient.create()
-                                .proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP)
-                                        .host(proxyHost)
-                                        .port( Integer.parseInt(proxyPort) )
-                                );
+            int connectionTimeout = webService.getConnectionTimeout() != null ? webService.getConnectionTimeout() : 30000;
+            int responseTimeout = webService.getResponseTimeout() != null ? webService.getResponseTimeout() : 30000;
 
-                ReactorClientHttpConnector conn = new ReactorClientHttpConnector(httpClient);
-                beanDefinition.setInstanceSupplier(
-                        () ->
-                                builder
-                                        .baseUrl(webService.getUrl())
-                                        .clientConnector(conn)
-                                        .build()
+            HttpClient httpClient =
+                    HttpClient.create()
+                            .option(
+                                    ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                                    connectionTimeout)
+                            .responseTimeout(Duration.ofMillis( responseTimeout ));
+
+            if (Boolean.TRUE.equals(webService.getUseProxy())) {
+                if (proxyHost.isBlank() || proxyPort.isBlank()) {
+                    throw new MissingPropertiesException("You need to specify a proxy in your configuration file");
+                }
+
+                httpClient.proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP)
+                        .host(proxyHost)
+                        .port( Integer.parseInt(proxyPort) )
                 );
-            } else {
-                beanDefinition.setInstanceSupplier( () -> builder.baseUrl(webService.getUrl()).build() );
             }
+
+            ReactorClientHttpConnector conn = new ReactorClientHttpConnector(httpClient);
+            beanDefinition.setInstanceSupplier(
+                    () ->
+                            builder
+                                    .baseUrl(webService.getUrl())
+                                    .clientConnector(conn)
+                                    .build()
+            );
 
             registry.registerBeanDefinition(webService.getName(), beanDefinition);
         }

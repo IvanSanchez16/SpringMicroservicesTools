@@ -1,5 +1,6 @@
-package io.ivansanchez16.apiresponses.webclient;
+package io.ivansanchez16.apiresponses.webclient.annotations;
 
+import io.ivansanchez16.apiresponses.webclient.WebClientConfig;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;

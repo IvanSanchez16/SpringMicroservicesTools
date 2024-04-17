@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Configuration;
 @Setter
 class EnvironmentConfig {
 
-    private final Logger LOGGER = LogManager.getLogger(EnvironmentConfig.class.getName());
+    private final Logger logger = LogManager.getLogger(EnvironmentConfig.class.getName());
 
     private String environment;
 
@@ -34,7 +34,7 @@ class EnvironmentConfig {
 
         Environment env = Environment.getByValue(environment);
         if (env == null) {
-            LOGGER.warn("Environment defined in configuration file not found. Ignoring value");
+            logger.warn("Environment defined in configuration file not found. Ignoring value");
         }
     }
 }
