@@ -10,6 +10,9 @@ import io.ivansanchez16.jpautils.PageQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -30,6 +33,7 @@ class DefaultRequest implements Request {
     private final String uri;
 
     private Object body;
+    private MultipartBodyBuilder multipartBodyBuilder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Gson gson = new Gson();
@@ -43,6 +47,12 @@ class DefaultRequest implements Request {
     @Override
     public Request addBody(Object requestBody) {
         this.body = requestBody;
+        return this;
+    }
+
+    @Override
+    public Request multipartBody(MultipartBodyBuilder builder) {
+        this.multipartBodyBuilder = builder;
         return this;
     }
 
@@ -154,13 +164,14 @@ class DefaultRequest implements Request {
     }
 
     private String makeRequest() {
-        WebClient.RequestBodySpec requestObject = webClient.method(httpMethod)
-                .uri(uri)
-                .acceptCharset(StandardCharsets.UTF_8)
-                .headers(h -> h.addAll(headers));
+        final WebClient.RequestHeadersSpec<?> requestObject;
 
-        if (body != null) {
-            requestObject.bodyValue(body);
+        if (multipartBodyBuilder != null) {
+            requestObject = buildRequestWithMultiPartBody();
+        } else if (body != null) {
+            requestObject = buildRequestWithBody();
+        } else {
+            requestObject = buildRequestWithoutBody();
         }
 
         String response;
@@ -177,5 +188,31 @@ class DefaultRequest implements Request {
         }
 
         return response;
+    }
+
+    private WebClient.RequestHeadersSpec<?> buildRequestWithoutBody() {
+        return webClient.method(httpMethod)
+                .uri(uri)
+                .acceptCharset(StandardCharsets.UTF_8)
+                .headers(h -> h.addAll(headers));
+    }
+
+    private WebClient.RequestHeadersSpec<?> buildRequestWithBody() {
+        return webClient.method(httpMethod)
+                .uri(uri)
+                .acceptCharset(StandardCharsets.UTF_8)
+                .headers(h -> h.addAll(headers))
+                .bodyValue(body);
+    }
+
+    private WebClient.RequestHeadersSpec<?> buildRequestWithMultiPartBody() {
+        return webClient.method(httpMethod)
+                .uri(uri)
+                .acceptCharset(StandardCharsets.UTF_8)
+                .headers(h -> h.addAll(headers))
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body( BodyInserters.fromMultipartData(
+                        multipartBodyBuilder.build()
+                ));
     }
 }
