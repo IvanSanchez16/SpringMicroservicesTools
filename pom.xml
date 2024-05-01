@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.1.5</version>
+		<version>3.2.4</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>io.ivansanchez16</groupId>
 	<artifactId>spring-microservices-tools</artifactId>
-	<version>0.2.7</version>
+	<version>0.3.1</version>
 	<name>spring-microservices-tools</name>
 	<description>Utility classes for develop of microservices</description>
 
@@ -39,7 +39,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot</artifactId>
 		</dependency>
 
 		<dependency>
@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20230227</version>
+			<version>20231013</version>
 		</dependency>
 
 		<dependency>
@@ -63,7 +63,25 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
-			<version>3.1.5</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-reactor-netty</artifactId>
+				</exclusion>
+			</exclusions>
+			<version>3.2.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+			<version>5.3.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.httpcomponents.core5</groupId>
+			<artifactId>httpcore5-reactive</artifactId>
+			<version>5.2.4</version>
 		</dependency>
 
 		<dependency>

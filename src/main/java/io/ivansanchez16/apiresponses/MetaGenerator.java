@@ -50,7 +50,7 @@ public class MetaGenerator {
                     .readValue(metaString);
 
         } catch (JsonProcessingException e) {
-            LogFile.logExcepcion(e);
+            LogFile.logException(e);
             return meta;
         }
     }

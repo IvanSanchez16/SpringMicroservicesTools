@@ -9,14 +9,19 @@ import java.util.Arrays;
 
 @UtilityClass
 public class LogFile {
+
     private final Logger LOGGER = LogManager.getLogger(LogFile.class.getName());
 
     private final String SEPARADOR = "--------------------------------------------------";
 
-    /*
-     * Método para grabar en log cualquier excepción ocurrida con su detalle y origen
+    private static String projectGroup = "";
+
+    /**
+     * Método para loggear el detalle de una excepción
+     *
+     * @param exception La excepción a loggear
      */
-    public void logExcepcion(Exception exception){
+    public void logException(Exception exception){
         String[] classSplit = exception.getClass().getName().split("\\.");
         String clase = classSplit[classSplit.length-1];
         String mensajeLog;
@@ -27,11 +32,12 @@ public class LogFile {
         // Obtener origen del error
         StackTraceElement[] st =
                 Arrays.stream(exception.getStackTrace())
-                        .filter(stackTraceElement -> stackTraceElement.getClassName().startsWith("com.coppel"))
+                        .filter(stackTraceElement -> stackTraceElement.getClassName().startsWith( projectGroup ))
                         .toArray(StackTraceElement[]::new);
+
         StackTraceElement ste;
         int stackTraceCount = Math.min(st.length, 3);
-        LOGGER.error("Stack trace excepcion originada");
+        LOGGER.error("Stack trace exception origin");
         for (int i = 0; i < stackTraceCount; i++) {
             ste = st[i];
             mensajeLog = String.format("%d: [Archivo: %s | Metodo: %s | Linea: %d]", i+1, ste.getFileName(), ste.getMethodName(), ste.getLineNumber());
@@ -98,4 +104,11 @@ public class LogFile {
         LOGGER.warn(SEPARADOR);
     }
 
+    public static String getProjectGroup() {
+        return projectGroup;
+    }
+
+    public static void setProjectGroup(String projectGroup) {
+        LogFile.projectGroup = projectGroup;
+    }
 }

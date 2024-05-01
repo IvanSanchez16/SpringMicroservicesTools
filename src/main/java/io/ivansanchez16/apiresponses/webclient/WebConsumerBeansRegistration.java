@@ -1,7 +1,13 @@
 package io.ivansanchez16.apiresponses.webclient;
 
 import io.ivansanchez16.apiresponses.webclient.exceptions.MissingPropertiesException;
-import io.netty.channel.ChannelOption;
+import org.apache.hc.client5.http.config.ConnectionConfig;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
+import org.apache.hc.core5.http.HttpHost;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
@@ -12,13 +18,12 @@ import org.springframework.beans.factory.support.GenericBeanDefinition;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
-import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.client.reactive.ClientHttpConnector;
+import org.springframework.http.client.reactive.HttpComponentsClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.netty.http.client.HttpClient;
-import reactor.netty.transport.ProxyProvider;
 
-import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostProcessor {
 
@@ -61,31 +66,39 @@ public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostP
 
             int connectionTimeout = webService.getConnectionTimeout() != null ? webService.getConnectionTimeout() : 30000;
             int responseTimeout = webService.getResponseTimeout() != null ? webService.getResponseTimeout() : 30000;
+            ConnectionConfig connConfig = ConnectionConfig.custom()
+                    .setConnectTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+                    .setSocketTimeout(connectionTimeout, TimeUnit.MILLISECONDS)
+                    .build();
 
-            HttpClient httpClient =
-                    HttpClient.create()
-                            .option(
-                                    ChannelOption.CONNECT_TIMEOUT_MILLIS,
-                                    connectionTimeout)
-                            .responseTimeout(Duration.ofMillis( responseTimeout ));
+            PoolingAsyncClientConnectionManager connectionManager = new PoolingAsyncClientConnectionManager();
+            connectionManager.setDefaultConnectionConfig(connConfig);
+
+            HttpAsyncClientBuilder clientBuilder = HttpAsyncClients.custom();
+
+            RequestConfig.Builder requestBuilder = RequestConfig.custom();
+            requestBuilder.setResponseTimeout(responseTimeout, TimeUnit.MILLISECONDS);
+
+            clientBuilder.setDefaultRequestConfig( requestBuilder.build() );
+            clientBuilder.setConnectionManager( connectionManager );
 
             if (Boolean.TRUE.equals(webService.getUseProxy())) {
                 if (proxyHost.isBlank() || proxyPort.isBlank()) {
                     throw new MissingPropertiesException("You need to specify a proxy in your configuration file");
                 }
 
-                httpClient.proxy(proxy -> proxy.type(ProxyProvider.Proxy.HTTP)
-                        .host(proxyHost)
-                        .port( Integer.parseInt(proxyPort) )
-                );
+                HttpHost proxy = new HttpHost("http", proxyHost, Integer.parseInt(proxyPort));
+                clientBuilder.setProxy(proxy);
             }
 
-            ReactorClientHttpConnector conn = new ReactorClientHttpConnector(httpClient);
+            CloseableHttpAsyncClient client = clientBuilder.build();
+            ClientHttpConnector connector = new HttpComponentsClientHttpConnector(client);
+
             beanDefinition.setInstanceSupplier(
                     () ->
                             builder
                                     .baseUrl(webService.getUrl())
-                                    .clientConnector(conn)
+                                    .clientConnector(connector)
                                     .build()
             );
 

@@ -73,7 +73,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logExcepcion(e);
+                LogFile.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -100,7 +100,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logExcepcion(e);
+                LogFile.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -127,7 +127,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logExcepcion(e);
+                LogFile.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -146,7 +146,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logExcepcion(e);
+                LogFile.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -202,6 +202,7 @@ class DefaultRequest implements Request {
                 .uri(uri)
                 .acceptCharset(StandardCharsets.UTF_8)
                 .headers(h -> h.addAll(headers))
+                .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(body);
     }
 

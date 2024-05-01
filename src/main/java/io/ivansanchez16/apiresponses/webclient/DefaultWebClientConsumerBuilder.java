@@ -10,8 +10,8 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
 
     private WebClient webClient;
     private final List<Header> defaultHeaders = new ArrayList<>();
-    private Boolean throwWebClientExceptions;
-    private Boolean logErrors;
+    private boolean throwWebClientExceptions = true;
+    private boolean logErrors = false;
 
     @Override
     public WebClientConsumerBuilder webClient(WebClient webClient) {
@@ -41,14 +41,6 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
     public WebClientConsumer build() {
         if (webClient == null) {
             throw new IllegalArgumentException("You need to specify a WebClient instance to build a WebClientConsumer");
-        }
-
-        if (this.throwWebClientExceptions == null) {
-            throwWebClientExceptions = true;
-        }
-
-        if (this.logErrors == null) {
-            logErrors = false;
         }
 
         HttpHeaders httpHeaders = new HttpHeaders();
