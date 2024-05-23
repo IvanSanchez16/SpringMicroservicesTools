@@ -14,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.nio.charset.StandardCharsets;
@@ -182,9 +183,29 @@ class DefaultRequest implements Request {
                     .block();
         } catch (WebClientResponseException ex) {
             if (throwWebClientExceptions) {
-                throw ex;
+                // Rethrow exception to get stacktrace
+                throw new WebClientResponseException(
+                        ex.getMessage(),
+                        ex.getStatusCode(),
+                        ex.getStatusText(),
+                        ex.getHeaders(),
+                        ex.getResponseBodyAsByteArray(),
+                        null,
+                        ex.getRequest()
+                );
             }
+
             response = ex.getResponseBodyAsString();
+        } catch (WebClientRequestException ex) {
+            // Rethrow exception to get stacktrace
+            final Exception newExp = new Exception( ex.getMessage() );
+
+            throw new WebClientRequestException(
+                    newExp,
+                    ex.getMethod(),
+                    ex.getUri(),
+                    ex.getHeaders()
+            );
         }
 
         return response;

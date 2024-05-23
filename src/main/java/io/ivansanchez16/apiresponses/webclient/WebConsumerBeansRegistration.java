@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 import org.springframework.http.client.reactive.ClientHttpConnector;
 import org.springframework.http.client.reactive.HttpComponentsClientHttpConnector;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
@@ -95,11 +96,15 @@ public class WebConsumerBeansRegistration implements BeanDefinitionRegistryPostP
             ClientHttpConnector connector = new HttpComponentsClientHttpConnector(client);
 
             beanDefinition.setInstanceSupplier(
-                    () ->
-                            builder
-                                    .baseUrl(webService.getUrl())
-                                    .clientConnector(connector)
-                                    .build()
+                    () -> builder
+                            .baseUrl( webService.getUrl() )
+                            .exchangeStrategies(
+                                    ExchangeStrategies.builder().codecs(
+                                            configurar -> configurar.defaultCodecs().maxInMemorySize(10 * 1024 * 1024)
+                                    ).build()
+                            )
+                            .clientConnector(connector)
+                            .build()
             );
 
             registry.registerBeanDefinition(webService.getName(), beanDefinition);

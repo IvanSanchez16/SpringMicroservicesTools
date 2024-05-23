@@ -29,10 +29,14 @@ public class WebClientConsumer {
     }
 
     public Request getRequest(String uri) {
+        final HttpHeaders headers = new HttpHeaders();
+
+        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
-                defaultHeaders,
+                headers,
                 logErrors,
                 HttpMethod.GET,
                 uri
@@ -40,10 +44,14 @@ public class WebClientConsumer {
     }
 
     public Request postRequest(String uri) {
+        final HttpHeaders headers = new HttpHeaders();
+
+        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
-                defaultHeaders,
+                headers,
                 logErrors,
                 HttpMethod.POST,
                 uri
@@ -51,10 +59,14 @@ public class WebClientConsumer {
     }
 
     public Request patchRequest(String uri) {
+        final HttpHeaders headers = new HttpHeaders();
+
+        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
-                defaultHeaders,
+                headers,
                 logErrors,
                 HttpMethod.PATCH,
                 uri
@@ -62,10 +74,14 @@ public class WebClientConsumer {
     }
 
     public Request putRequest(String uri) {
+        final HttpHeaders headers = new HttpHeaders();
+
+        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
-                defaultHeaders,
+                headers,
                 logErrors,
                 HttpMethod.PUT,
                 uri
@@ -73,10 +89,14 @@ public class WebClientConsumer {
     }
 
     public Request deleteRequest(String uri) {
+        final HttpHeaders headers = new HttpHeaders();
+
+        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
-                defaultHeaders,
+                headers,
                 logErrors,
                 HttpMethod.DELETE,
                 uri
