@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import io.ivansanchez16.apiresponses.ApiBodyDTO;
+import io.ivansanchez16.apiresponses.webclient.exceptions.MakeResponseException;
 import io.ivansanchez16.apiresponses.webclient.exceptions.UnexpectedResponseException;
 import io.ivansanchez16.generalutilery.LogFile;
 import io.ivansanchez16.jpautils.PageQuery;
@@ -12,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -33,11 +35,18 @@ class DefaultRequest implements Request {
     private final HttpMethod httpMethod;
     private final String uri;
 
+    private MediaType mediaType = MediaType.APPLICATION_JSON;
     private Object body;
     private MultipartBodyBuilder multipartBodyBuilder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Gson gson = new Gson();
+
+    @Override
+    public Request setMediaType(MediaType mediaType) {
+        this.mediaType = mediaType;
+        return this;
+    }
 
     @Override
     public Request addHeader(String headerName, String headerValue) {
@@ -167,12 +176,16 @@ class DefaultRequest implements Request {
     private String makeRequest() {
         final WebClient.RequestHeadersSpec<?> requestObject;
 
-        if (multipartBodyBuilder != null) {
-            requestObject = buildRequestWithMultiPartBody();
-        } else if (body != null) {
-            requestObject = buildRequestWithBody();
-        } else {
-            requestObject = buildRequestWithoutBody();
+        try {
+            if (multipartBodyBuilder != null) {
+                requestObject = buildRequestWithMultiPartBody();
+            } else if (body != null) {
+                requestObject = buildRequestWithBody();
+            } else {
+                requestObject = buildRequestWithoutBody();
+            }
+        } catch (Exception e) {
+            throw new MakeResponseException(e.getMessage(), e);
         }
 
         String response;
@@ -223,7 +236,7 @@ class DefaultRequest implements Request {
                 .uri(uri)
                 .acceptCharset(StandardCharsets.UTF_8)
                 .headers(h -> h.addAll(headers))
-                .contentType(MediaType.APPLICATION_JSON)
+                .contentType(mediaType)
                 .bodyValue(body);
     }
 

@@ -2,11 +2,21 @@ package io.ivansanchez16.apiresponses.webclient;
 
 import io.ivansanchez16.apiresponses.ApiBodyDTO;
 import io.ivansanchez16.jpautils.PageQuery;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.MultipartBodyBuilder;
 
 import java.util.List;
 
 public interface Request {
+
+    /**
+     * Método para especificar el Content-Type de la petición a realizar.
+     * El valor por default es MediaType.APPLICATION_JSON
+     *
+     * @param mediaType El valor del MediaType a asignar
+     * @return El mismo objeto de petición con los valores asignados
+     */
+    Request setMediaType(MediaType mediaType);
 
     /**
      * Método para agregar un header a la petición
