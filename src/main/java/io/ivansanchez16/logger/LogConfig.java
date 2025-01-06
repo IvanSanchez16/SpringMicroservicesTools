@@ -17,4 +17,5 @@ public class LogConfig {
 
     private String transactionHeader;
     private String sessionHeadersPrefix;
+    private String[] sessionHeadersList;
 }

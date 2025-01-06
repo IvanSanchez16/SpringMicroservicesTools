@@ -1,5 +1,6 @@
 package io.ivansanchez16.apiresponses.webclient;
 
+import io.ivansanchez16.logger.LogMethods;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -14,7 +15,9 @@ public class WebClientConsumer {
 
     private final boolean throwWebClientExceptions;
     private final HttpHeaders defaultHeaders;
-    private final boolean logErrors;
+    private final LogMethods logMethods;
+
+    private final String transactionHeader;
 
     public String stringWithRequestParams(Map<String, Object> requestParams) {
         final StringBuilder sb = new StringBuilder();
@@ -29,77 +32,41 @@ public class WebClientConsumer {
     }
 
     public Request getRequest(String uri) {
-        final HttpHeaders headers = new HttpHeaders();
-
-        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
-
-        return new DefaultRequest(
-                webClient,
-                throwWebClientExceptions,
-                headers,
-                logErrors,
-                HttpMethod.GET,
-                uri
-        );
+        return genericRequest(uri, HttpMethod.GET);
     }
 
     public Request postRequest(String uri) {
-        final HttpHeaders headers = new HttpHeaders();
-
-        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
-
-        return new DefaultRequest(
-                webClient,
-                throwWebClientExceptions,
-                headers,
-                logErrors,
-                HttpMethod.POST,
-                uri
-        );
+        return genericRequest(uri, HttpMethod.POST);
     }
 
     public Request patchRequest(String uri) {
-        final HttpHeaders headers = new HttpHeaders();
-
-        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
-
-        return new DefaultRequest(
-                webClient,
-                throwWebClientExceptions,
-                headers,
-                logErrors,
-                HttpMethod.PATCH,
-                uri
-        );
+        return genericRequest(uri, HttpMethod.PATCH);
     }
 
     public Request putRequest(String uri) {
-        final HttpHeaders headers = new HttpHeaders();
-
-        defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
-
-        return new DefaultRequest(
-                webClient,
-                throwWebClientExceptions,
-                headers,
-                logErrors,
-                HttpMethod.PUT,
-                uri
-        );
+        return genericRequest(uri, HttpMethod.PUT);
     }
 
     public Request deleteRequest(String uri) {
+        return genericRequest(uri, HttpMethod.DELETE);
+    }
+
+    private Request genericRequest(String uri, HttpMethod httpMethod) {
         final HttpHeaders headers = new HttpHeaders();
 
+        // Add default and transaction headers to petition
         defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
+        if (transactionHeader != null && !transactionHeader.isBlank()) {
+            headers.add(transactionHeader, logMethods.request.getHeader(transactionHeader));
+        }
 
         return new DefaultRequest(
                 webClient,
                 throwWebClientExceptions,
                 headers,
-                logErrors,
-                HttpMethod.DELETE,
-                uri
+                httpMethod,
+                uri,
+                logMethods
         );
     }
 

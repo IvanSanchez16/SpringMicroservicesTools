@@ -1,17 +1,23 @@
 package io.ivansanchez16.apiresponses.webclient;
 
+import io.ivansanchez16.logger.LogMethods;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@RequiredArgsConstructor
 class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
 
     private WebClient webClient;
+
+    private LogMethods logMethods;
     private final List<Header> defaultHeaders = new ArrayList<>();
     private boolean throwWebClientExceptions = true;
-    private boolean logErrors = false;
+
+    private final String transactionHeader;
 
     @Override
     public WebClientConsumerBuilder webClient(WebClient webClient) {
@@ -32,8 +38,8 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
     }
 
     @Override
-    public WebClientConsumerBuilder logErrors(boolean flag) {
-        this.logErrors = flag;
+    public WebClientConsumerBuilder logErrors(LogMethods logMethods) {
+        this.logMethods = logMethods;
         return this;
     }
 
@@ -46,6 +52,6 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
         HttpHeaders httpHeaders = new HttpHeaders();
         defaultHeaders.forEach(header -> httpHeaders.add(header.getName(), header.getValue()));
 
-        return new WebClientConsumer(webClient, throwWebClientExceptions, httpHeaders, logErrors);
+        return new WebClientConsumer(webClient, throwWebClientExceptions, httpHeaders, logMethods, transactionHeader);
     }
 }

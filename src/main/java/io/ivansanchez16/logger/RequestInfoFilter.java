@@ -4,8 +4,7 @@ import io.ivansanchez16.logger.classes.ClientInfo;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
@@ -16,8 +15,6 @@ import java.util.UUID;
 @Order
 @RequiredArgsConstructor
 public class RequestInfoFilter implements Filter {
-
-    private final Logger logger = LogManager.getLogger(RequestInfoFilter.class.getName());
 
     private final String transactionHeaderName;
     private final String sessionHeadersPrefix;
@@ -41,7 +38,15 @@ public class RequestInfoFilter implements Filter {
         List<String> headers = Collections.list(req.getHeaderNames());
         headers.removeIf(h -> !h.startsWith(sessionHeadersPrefix + "."));
         if (headers.size() > 0) {
-            
+            JSONObject sessionObject = new JSONObject();
+
+            headers.forEach(header -> {
+                String valueName = header.split("\\.")[1];
+
+                sessionObject.put(valueName, req.getHeader(header));
+            });
+
+            req.setAttribute("SESSION-INFO", sessionObject);
         }
 
         filterChain.doFilter(req, servletResponse);

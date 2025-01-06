@@ -8,7 +8,9 @@ import io.ivansanchez16.apiresponses.webclient.exceptions.MakeResponseException;
 import io.ivansanchez16.apiresponses.webclient.exceptions.UnexpectedResponseException;
 import io.ivansanchez16.logger.LogMethods;
 import io.ivansanchez16.jpautils.PageQuery;
+import io.ivansanchez16.logger.classes.Event;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.Level;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -26,15 +28,14 @@ import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKN
 @RequiredArgsConstructor
 class DefaultRequest implements Request {
 
-    private static final String UNEXPECTED_RESPONSE_MESSAGE = "The api response body has different structure of object provided";
-
     private final WebClient webClient;
     private final boolean throwWebClientExceptions;
     private final HttpHeaders headers;
-    private final boolean logErrors;
 
     private final HttpMethod httpMethod;
     private final String uri;
+
+    private final LogMethods logMethods;
 
     private MediaType mediaType = MediaType.APPLICATION_JSON;
     private Object body;
@@ -43,6 +44,8 @@ class DefaultRequest implements Request {
     private final ObjectMapper objectMapper = new ObjectMapper()
             .configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
     private final Gson gson = new Gson();
+
+    private static final String UNEXPECTED_RESPONSE_MESSAGE = "The api response body has different structure of object provided";
 
     @Override
     public Request setMediaType(MediaType mediaType) {
@@ -82,10 +85,9 @@ class DefaultRequest implements Request {
             }
 
             return finalResponse;
-
         } catch (Exception e) {
-            if (logErrors) {
-                LogMethods.logException(e);
+            if (logMethods != null) {
+                logMethods.logException(Level.ERROR, e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -109,10 +111,9 @@ class DefaultRequest implements Request {
                     .toList());
 
             return finalResponse;
-
         } catch (Exception e) {
-            if (logErrors) {
-                LogMethods.logException(e);
+            if (logMethods != null) {
+                logMethods.logException(Level.ERROR, e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -136,10 +137,9 @@ class DefaultRequest implements Request {
                     .toList());
 
             return finalResponse;
-
         } catch (Exception e) {
-            if (logErrors) {
-                LogMethods.logException(e);
+            if (logMethods != null) {
+                logMethods.logException(Level.ERROR, e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -155,10 +155,9 @@ class DefaultRequest implements Request {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
 
             return new ApiBodyDTO<>( apiBodyDTO.getMeta() );
-
         } catch (Exception e) {
-            if (logErrors) {
-                LogMethods.logException(e);
+            if (logMethods != null) {
+                logMethods.logException(Level.ERROR, e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -196,31 +195,56 @@ class DefaultRequest implements Request {
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();
-        } catch (WebClientResponseException ex) {
-            if (throwWebClientExceptions) {
-                // Rethrow exception to get stacktrace
-                throw new WebClientResponseException(
-                        ex.getMessage(),
-                        ex.getStatusCode(),
-                        ex.getStatusText(),
-                        ex.getHeaders(),
-                        ex.getResponseBodyAsByteArray(),
-                        null,
-                        ex.getRequest()
+
+            if (logMethods != null) {
+                String header = "Petición web realizada éxitosamente";
+
+                List<String> rows = List.of(
+                    String.format("Method: %s | Uri: %s", httpMethod.toString(), uri),
+                    String.format("Body: [%s]", body.toString()),
+                    String.format("Response: [%s]", response)
                 );
+
+                logMethods.logEvent(new Event(header, rows));
+            }
+        } catch (WebClientResponseException ex) {
+            // Create new exception object to get stacktrace
+            WebClientResponseException webClientResponseException = new WebClientResponseException(
+                    ex.getMessage(),
+                    ex.getStatusCode(),
+                    ex.getStatusText(),
+                    ex.getHeaders(),
+                    ex.getResponseBodyAsByteArray(),
+                    null,
+                    ex.getRequest()
+            );
+
+            if (logMethods != null) {
+                Level logLevel = ex.getStatusCode().is5xxServerError() ? Level.ERROR : Level.WARN;
+
+                logMethods.logException(logLevel, webClientResponseException);
+            }
+
+            if (throwWebClientExceptions) {
+                throw webClientResponseException;
             }
 
             response = ex.getResponseBodyAsString();
         } catch (WebClientRequestException ex) {
             // Rethrow exception to get stacktrace
             final Exception newExp = new Exception( ex.getMessage() );
-
-            throw new WebClientRequestException(
+            WebClientRequestException webClientRequestException = new WebClientRequestException(
                     newExp,
                     ex.getMethod(),
                     ex.getUri(),
                     ex.getHeaders()
             );
+
+            if (logMethods != null) {
+                logMethods.logException(Level.ERROR, webClientRequestException);
+            }
+
+            throw webClientRequestException;
         }
 
         return response;

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ivansanchez16.logger.LogMethods;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.Level;
 import org.springframework.http.HttpStatusCode;
 
 /**
@@ -51,7 +52,7 @@ public class MetaGenerator {
                     .readValue(metaString);
 
         } catch (JsonProcessingException e) {
-            logMethods.logException(e);
+            logMethods.logException(Level.ERROR, e);
             return meta;
         }
     }
