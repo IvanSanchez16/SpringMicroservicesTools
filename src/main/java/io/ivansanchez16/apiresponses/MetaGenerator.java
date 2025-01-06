@@ -3,9 +3,12 @@ package io.ivansanchez16.apiresponses;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.ivansanchez16.logger.LogMethods;
+import io.ivansanchez16.logger.classes.ClientInfo;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Level;
 import org.springframework.http.HttpStatusCode;
+
+import java.util.UUID;
 
 /**
  * MetaGenerator
@@ -17,6 +20,7 @@ public class MetaGenerator {
 
     private final EnvironmentConfig environmentConfig;
     private final LogMethods logMethods;
+    private final String transactionHeader;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -36,6 +40,11 @@ public class MetaGenerator {
     }
 
     private Meta crearMeta(Meta meta) {
+        ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute(transactionHeader);
+        if (clientInfo != null) {
+            meta.setTransactionID(clientInfo.transactionUUID().toString());
+        }
+
         try {
             final String metaString = objectMapper.writeValueAsString(meta);
 
