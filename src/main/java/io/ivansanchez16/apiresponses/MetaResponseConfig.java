@@ -13,8 +13,7 @@ public class MetaResponseConfig {
     }
 
     @Bean
-    public static MetaGenerator createMetaGeneratorBean(EnvironmentConfig environmentConfig,
-                                                        LogConfig logConfig, LogMethods logMethods) {
-        return new MetaGenerator(environmentConfig, logMethods, logConfig.getTransactionHeader());
+    public static MetaGenerator createMetaGeneratorBean(EnvironmentConfig environmentConfig, LogMethods logMethods) {
+        return new MetaGenerator(environmentConfig, logMethods);
     }
 }

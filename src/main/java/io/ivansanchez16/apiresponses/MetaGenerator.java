@@ -20,7 +20,6 @@ public class MetaGenerator {
 
     private final EnvironmentConfig environmentConfig;
     private final LogMethods logMethods;
-    private final String transactionHeader;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -40,7 +39,7 @@ public class MetaGenerator {
     }
 
     private Meta crearMeta(Meta meta) {
-        ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute(transactionHeader);
+        ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute("ORIGIN-INFO");
         if (clientInfo != null) {
             meta.setTransactionID(clientInfo.transactionUUID().toString());
         }
