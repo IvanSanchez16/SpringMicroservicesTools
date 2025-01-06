@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>io.ivansanchez16</groupId>
 	<artifactId>spring-microservices-tools</artifactId>
-	<version>0.3.8</version>
+	<version>0.4.0</version>
 	<name>spring-microservices-tools</name>
 	<description>Utility classes for develop of microservices</description>
 
@@ -34,8 +34,6 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<springframework.version>6.1.14</springframework.version>
-		<tomcat.version>10.1.26</tomcat.version>
 	</properties>
 
 	<dependencies>
@@ -51,9 +49,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.apache.tomcat.embed</groupId>
-			<artifactId>tomcat-embed-core</artifactId>
-			<version>${tomcat.version}</version>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>6.1.0</version>
 		</dependency>
 
 		<dependency>

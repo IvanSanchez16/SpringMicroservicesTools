@@ -199,11 +199,14 @@ class DefaultRequest implements Request {
             if (logMethods != null) {
                 String header = "Petición web realizada éxitosamente";
 
-                List<String> rows = List.of(
-                    String.format("Method: %s | Uri: %s", httpMethod.toString(), uri),
-                    String.format("Body: [%s]", body.toString()),
-                    String.format("Response: [%s]", response)
-                );
+                List<String> rows = new java.util.ArrayList<>(List.of(
+                        String.format("Method: %s | Uri: %s", httpMethod.toString(), uri)
+                ));
+
+                if (body != null) {
+                    rows.add(String.format("Body: [%s]", body));
+                }
+                rows.add( String.format("Response: [%s]", response) );
 
                 logMethods.logEvent(new Event(header, rows));
             }

@@ -12,7 +12,8 @@ public class LoggerConfig {
 
     @Bean
     public static RequestInfoFilter createRequestInfoFilterBean(LogConfig logConfig) {
-        return new RequestInfoFilter(logConfig.getTransactionHeader(), logConfig.getSessionHeadersPrefix());
+        return new RequestInfoFilter(logConfig.getTransactionHeader(), logConfig.getSessionHeadersPrefix(),
+                logConfig.getSessionHeadersList());
     }
 
     @Bean

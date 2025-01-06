@@ -13,11 +13,17 @@ import java.util.List;
 import java.util.UUID;
 
 @Order
-@RequiredArgsConstructor
 public class RequestInfoFilter implements Filter {
 
     private final String transactionHeaderName;
     private final String sessionHeadersPrefix;
+    private final List<String> sessionHeadersList;
+
+    public RequestInfoFilter(String transactionHeaderName, String sessionHeadersPrefix, String[] sessionHeadersList) {
+        this.transactionHeaderName = transactionHeaderName != null ? transactionHeaderName : "TRANSACTION-ID";
+        this.sessionHeadersPrefix = sessionHeadersPrefix != null ? sessionHeadersPrefix : "";
+        this.sessionHeadersList = List.of(sessionHeadersList);
+    }
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
@@ -42,6 +48,9 @@ public class RequestInfoFilter implements Filter {
 
             headers.forEach(header -> {
                 String valueName = header.split("\\.")[1];
+                if (!sessionHeadersList.contains(valueName)) {
+                    return;
+                }
 
                 sessionObject.put(valueName, req.getHeader(header));
             });
