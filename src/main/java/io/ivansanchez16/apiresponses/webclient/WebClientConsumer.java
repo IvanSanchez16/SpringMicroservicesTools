@@ -1,6 +1,7 @@
 package io.ivansanchez16.apiresponses.webclient;
 
 import io.ivansanchez16.logger.LogMethods;
+import io.ivansanchez16.logger.classes.ClientInfo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -56,8 +57,10 @@ public class WebClientConsumer {
 
         // Add default and transaction headers to petition
         defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
-        if (transactionHeader != null && !transactionHeader.isBlank()) {
-            headers.add(transactionHeader, logMethods.request.getHeader(transactionHeader));
+
+        ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute(transactionHeader);
+        if (clientInfo != null) {
+            headers.add(transactionHeader, clientInfo.transactionUUID().toString());
         }
 
         return new DefaultRequest(
