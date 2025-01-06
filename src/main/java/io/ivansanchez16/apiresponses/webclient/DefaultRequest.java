@@ -6,7 +6,7 @@ import com.google.gson.internal.LinkedTreeMap;
 import io.ivansanchez16.apiresponses.ApiBodyDTO;
 import io.ivansanchez16.apiresponses.webclient.exceptions.MakeResponseException;
 import io.ivansanchez16.apiresponses.webclient.exceptions.UnexpectedResponseException;
-import io.ivansanchez16.generalutilery.LogFile;
+import io.ivansanchez16.logger.LogMethods;
 import io.ivansanchez16.jpautils.PageQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -85,7 +85,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logException(e);
+                LogMethods.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -112,7 +112,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logException(e);
+                LogMethods.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -139,7 +139,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logException(e);
+                LogMethods.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -158,7 +158,7 @@ class DefaultRequest implements Request {
 
         } catch (Exception e) {
             if (logErrors) {
-                LogFile.logException(e);
+                LogMethods.logException(e);
             }
 
             throw new UnexpectedResponseException(UNEXPECTED_RESPONSE_MESSAGE, uri, httpMethod);
@@ -230,7 +230,8 @@ class DefaultRequest implements Request {
         return webClient.method(httpMethod)
                 .uri(uri)
                 .acceptCharset(StandardCharsets.UTF_8)
-                .headers(h -> h.addAll(headers));
+                .headers(h -> h.addAll(headers))
+                .contentType(mediaType);
     }
 
     private WebClient.RequestHeadersSpec<?> buildRequestWithBody() {

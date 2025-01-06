@@ -1,5 +1,6 @@
 package io.ivansanchez16.apiresponses;
 
+import io.ivansanchez16.logger.LogMethods;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,7 +12,7 @@ public class MetaResponseConfig {
     }
 
     @Bean
-    public static MetaGenerator createMetaGeneratorBean(EnvironmentConfig environmentConfig) {
-        return new MetaGenerator(environmentConfig);
+    public static MetaGenerator createMetaGeneratorBean(EnvironmentConfig environmentConfig, LogMethods logMethods) {
+        return new MetaGenerator(environmentConfig, logMethods);
     }
 }

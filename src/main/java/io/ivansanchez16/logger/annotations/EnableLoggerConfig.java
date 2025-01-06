@@ -1,6 +1,7 @@
-package io.ivansanchez16.apiresponses;
+package io.ivansanchez16.logger.annotations;
 
-import io.ivansanchez16.logger.annotations.EnableLoggerConfig;
+import io.ivansanchez16.logger.LogConfig;
+import io.ivansanchez16.logger.LoggerConfig;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;
@@ -10,7 +11,6 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@EnableLoggerConfig
-@Import({EnvironmentConfig.class, MetaResponseConfig.class})
-public @interface EnableMetaResponse {
+@Import({LogConfig.class, LoggerConfig.class})
+public @interface EnableLoggerConfig {
 }
