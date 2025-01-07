@@ -6,6 +6,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,6 +23,10 @@ public class LogConfig {
     private String sessionHeadersPrefix;
     private String[] sessionHeadersList;
 
+    private String projectGroup;
+
+    private final Logger logger = LogManager.getLogger(LogConfig.class.getName());
+
     @PostConstruct
     void checkVariables() {
         if (transactionHeader == null) {
@@ -33,6 +39,11 @@ public class LogConfig {
 
         if (sessionHeadersList == null) {
             throw new MissingPropertiesException("You need to specify a app.logger.sessionHeadersList property on your configuration file");
+        }
+
+        if (projectGroup == null) {
+            projectGroup = "";
+            logger.warn("Property app.logger.projectGroup not defined. It´s recommendable specify a value for better logging");
         }
     }
 }

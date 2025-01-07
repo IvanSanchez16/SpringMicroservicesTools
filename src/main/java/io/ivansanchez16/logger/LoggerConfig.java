@@ -17,7 +17,7 @@ public class LoggerConfig {
     }
 
     @Bean
-    public static LogMethods createLogMethods() {
-        return new LogMethods();
+    public static LogMethods createLogMethods(LogConfig logConfig) {
+        return new LogMethods(logConfig);
     }
 }

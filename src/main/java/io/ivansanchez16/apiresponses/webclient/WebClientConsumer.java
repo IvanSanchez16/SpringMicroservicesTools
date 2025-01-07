@@ -3,10 +3,12 @@ package io.ivansanchez16.apiresponses.webclient;
 import io.ivansanchez16.logger.LogMethods;
 import io.ivansanchez16.logger.classes.ClientInfo;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONObject;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.Iterator;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -17,8 +19,6 @@ public class WebClientConsumer {
     private final boolean throwWebClientExceptions;
     private final HttpHeaders defaultHeaders;
     private final LogMethods logMethods;
-
-    private final String transactionHeader;
 
     public String stringWithRequestParams(Map<String, Object> requestParams) {
         final StringBuilder sb = new StringBuilder();
@@ -55,12 +55,26 @@ public class WebClientConsumer {
     private Request genericRequest(String uri, HttpMethod httpMethod) {
         final HttpHeaders headers = new HttpHeaders();
 
-        // Add default and transaction headers to petition
+        // Add default headers
         defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
 
+        // Add transaction header
         ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute("ORIGIN-INFO");
         if (clientInfo != null) {
-            headers.add(transactionHeader, clientInfo.transactionUUID().toString());
+            headers.add(logMethods.getLogConfig().getTransactionHeader(), clientInfo.transactionUUID().toString());
+        }
+
+        // Add session headers
+        JSONObject sessionInfo = (JSONObject) logMethods.request.getAttribute("SESSION-INFO");
+        if (sessionInfo != null) {
+            String sessionHeadersPrefix = logMethods.getLogConfig().getSessionHeadersPrefix();
+            Iterator<String> keys = sessionInfo.keys();
+
+            while (keys.hasNext()) {
+                String header = keys.next();
+
+                headers.add(sessionHeadersPrefix + "." + header, sessionInfo.getString(header));
+            }
         }
 
         return new DefaultRequest(
