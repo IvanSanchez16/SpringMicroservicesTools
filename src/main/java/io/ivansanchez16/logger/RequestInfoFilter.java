@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 @Order
 public class RequestInfoFilter implements Filter {
@@ -21,8 +22,8 @@ public class RequestInfoFilter implements Filter {
 
     public RequestInfoFilter(String transactionHeaderName, String sessionHeadersPrefix, String[] sessionHeadersList) {
         this.transactionHeaderName = transactionHeaderName != null ? transactionHeaderName : "TRANSACTION-ID";
-        this.sessionHeadersPrefix = sessionHeadersPrefix != null ? sessionHeadersPrefix : "";
-        this.sessionHeadersList = List.of(sessionHeadersList);
+        this.sessionHeadersPrefix = sessionHeadersPrefix != null ? sessionHeadersPrefix.toLowerCase() : "";
+        this.sessionHeadersList = Stream.of(sessionHeadersList).map(String::toLowerCase).toList();
     }
 
     @Override

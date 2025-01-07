@@ -22,6 +22,8 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
     @Override
     public WebClientConsumerBuilder webClient(WebClient webClient) {
         this.webClient = webClient;
+        throwWebClientExceptions = true;
+        defaultHeaders.clear();
         return this;
     }
 
