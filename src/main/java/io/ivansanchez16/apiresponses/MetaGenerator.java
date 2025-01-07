@@ -39,9 +39,11 @@ public class MetaGenerator {
     }
 
     private Meta crearMeta(Meta meta) {
-        ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute("ORIGIN-INFO");
-        if (clientInfo != null) {
-            meta.setTransactionID(clientInfo.transactionUUID().toString());
+        if (logMethods.request != null) {
+            ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute("ORIGIN-INFO");
+            if (clientInfo != null) {
+                meta.setTransactionID(clientInfo.transactionUUID().toString());
+            }
         }
 
         try {
