@@ -1,6 +1,5 @@
 package io.ivansanchez16.apiresponses.webclient;
 
-import io.ivansanchez16.logger.LogConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
@@ -19,8 +18,8 @@ public class WebClientConfig {
     }
 
     @Bean
-    public static WebClientConsumerBuilder webClientConsumerBuilder(LogConfig logConfig) {
-        return new DefaultWebClientConsumerBuilder(logConfig.getTransactionHeader());
+    public static WebClientConsumerBuilder webClientConsumerBuilder() {
+        return new DefaultWebClientConsumerBuilder();
     }
 
 }

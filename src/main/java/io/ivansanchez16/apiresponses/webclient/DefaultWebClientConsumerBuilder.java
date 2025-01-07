@@ -17,8 +17,6 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
     private final List<Header> defaultHeaders = new ArrayList<>();
     private boolean throwWebClientExceptions = true;
 
-    private final String transactionHeader;
-
     @Override
     public WebClientConsumerBuilder webClient(WebClient webClient) {
         this.webClient = webClient;
@@ -54,6 +52,6 @@ class DefaultWebClientConsumerBuilder implements WebClientConsumerBuilder{
         HttpHeaders httpHeaders = new HttpHeaders();
         defaultHeaders.forEach(header -> httpHeaders.add(header.getName(), header.getValue()));
 
-        return new WebClientConsumer(webClient, throwWebClientExceptions, httpHeaders, logMethods, transactionHeader);
+        return new WebClientConsumer(webClient, throwWebClientExceptions, httpHeaders, logMethods);
     }
 }
