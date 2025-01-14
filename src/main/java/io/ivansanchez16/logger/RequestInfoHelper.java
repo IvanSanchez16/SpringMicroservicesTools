@@ -18,6 +18,7 @@ public class RequestInfoHelper {
         try {
             return (ClientInfo) request.getAttribute("ORIGIN-INFO");
         } catch (IllegalStateException e) {
+            // Case if we are not on a web request
             return new ClientInfo("Unknown", "Unknown", UUID.randomUUID());
         }
     }
@@ -26,6 +27,7 @@ public class RequestInfoHelper {
         try {
             return (JSONObject) request.getAttribute("SESSION-INFO");
         } catch (IllegalStateException e) {
+            // Case if we are not on a web request
             return null;
         }
     }
