@@ -4,8 +4,6 @@ import io.ivansanchez16.logger.classes.ClientInfo;
 import io.ivansanchez16.logger.classes.Event;
 import io.ivansanchez16.logger.enums.SecurityEventType;
 import io.ivansanchez16.logger.enums.TransactionType;
-import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -27,8 +24,7 @@ public class LogMethods {
 
     private final LogConfig logConfig;
 
-    @Resource
-    public HttpServletRequest request;
+    private final RequestInfoHelper requestInfoHelper;
 
     /**
      * Método para loggear el detalle de una excepción
@@ -131,17 +127,16 @@ public class LogMethods {
         logger.info(SEPARADOR);
     }
 
+    public RequestInfoHelper getRequestInfoHelper() {
+        return requestInfoHelper;
+    }
+
     public LogConfig getLogConfig() {
         return logConfig;
     }
 
     private void logUserDetail(Level level) {
-        if (request == null) {
-            logger.log(level, "Info del usuario: No se encontró ninguna sesión");
-            return;
-        }
-
-        JSONObject sessionInfo = (JSONObject) request.getAttribute("SESSION-INFO");
+        JSONObject sessionInfo = requestInfoHelper.getSessionInfoFromRequest();
         if (sessionInfo == null) {
             logger.log(level, "Info del usuario: No se encontró ninguna sesión");
             return;
@@ -153,27 +148,15 @@ public class LogMethods {
         Iterator<String> keys = sessionInfo.keys();
         while (keys.hasNext()) {
             String header = keys.next();
-            messageLog.append( String.format("%s: [%s] |", header, sessionInfo.get(header)) );
+            messageLog.append( String.format("%s: [%s] | ", header, sessionInfo.get(header)) );
         }
 
-        logger.log(level, messageLog.substring(0, messageLog.length() - 2));
+        logger.log(level, messageLog.substring(0, messageLog.length() - 3));
     }
 
     private void logOriginAndTransaction(Level level) {
-        ClientInfo originInfo;
+        ClientInfo originInfo = requestInfoHelper.getClientInfoFromRequest();
         String messageLog;
-
-        if (request == null) {
-            originInfo = new ClientInfo("Unknown", "Unknown", UUID.randomUUID());
-        } else {
-            originInfo = (ClientInfo) request.getAttribute("ORIGIN-INFO");
-
-            if (originInfo == null) {
-                originInfo = new ClientInfo("Unknown", "Unknown", UUID.randomUUID());
-
-                request.setAttribute("ORIGIN-INFO", originInfo);
-            }
-        }
 
         messageLog = String.format("Transaction UUID: %s", originInfo.transactionUUID().toString());
         logger.log(level, messageLog);

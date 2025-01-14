@@ -58,24 +58,22 @@ public class WebClientConsumer {
         // Add default headers
         defaultHeaders.forEach((header, values) -> values.forEach(value -> headers.add(header, value)));
 
-        if (logMethods.request != null) {
-            // Add transaction header
-            ClientInfo clientInfo = (ClientInfo) logMethods.request.getAttribute("ORIGIN-INFO");
-            if (clientInfo != null) {
-                headers.add(logMethods.getLogConfig().getTransactionHeader(), clientInfo.transactionUUID().toString());
-            }
+        // Add transaction header
+        ClientInfo clientInfo = logMethods.getRequestInfoHelper().getClientInfoFromRequest();
+        if (clientInfo != null) {
+            headers.add(logMethods.getLogConfig().getTransactionHeader(), clientInfo.transactionUUID().toString());
+        }
 
-            // Add session headers
-            JSONObject sessionInfo = (JSONObject) logMethods.request.getAttribute("SESSION-INFO");
-            if (sessionInfo != null) {
-                String sessionHeadersPrefix = logMethods.getLogConfig().getSessionHeadersPrefix();
-                Iterator<String> keys = sessionInfo.keys();
+        // Add session headers
+        JSONObject sessionInfo = logMethods.getRequestInfoHelper().getSessionInfoFromRequest();
+        if (sessionInfo != null) {
+            String sessionHeadersPrefix = logMethods.getLogConfig().getSessionHeadersPrefix();
+            Iterator<String> keys = sessionInfo.keys();
 
-                while (keys.hasNext()) {
-                    String header = keys.next();
+            while (keys.hasNext()) {
+                String header = keys.next();
 
-                    headers.add(sessionHeadersPrefix + "." + header, sessionInfo.getString(header));
-                }
+                headers.add(sessionHeadersPrefix + "." + header, sessionInfo.getString(header));
             }
         }
 
