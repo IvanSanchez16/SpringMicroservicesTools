@@ -103,12 +103,15 @@ class DefaultRequest implements Request {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
 
             final ApiBodyDTO<List<T>> finalResponse = new ApiBodyDTO<>( apiBodyDTO.getMeta() );
-            finalResponse.setData( objectMapper.convertValue(apiBodyDTO.getData(), List.class) );
 
-            finalResponse.setData( finalResponse.getData()
-                    .stream()
-                    .map(o -> objectMapper.convertValue(o, clazz))
-                    .toList());
+            if (apiBodyDTO.getData() != null) {
+                finalResponse.setData( objectMapper.convertValue(apiBodyDTO.getData(), List.class) );
+
+                finalResponse.setData( finalResponse.getData()
+                        .stream()
+                        .map(o -> objectMapper.convertValue(o, clazz))
+                        .toList());
+            }
 
             return finalResponse;
         } catch (Exception e) {
@@ -129,12 +132,15 @@ class DefaultRequest implements Request {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
 
             final ApiBodyDTO<PageQuery<T>> finalResponse = new ApiBodyDTO<>( apiBodyDTO.getMeta() );
-            finalResponse.setData( objectMapper.convertValue(apiBodyDTO.getData(), PageQuery.class) );
 
-            finalResponse.getData().setRows( finalResponse.getData().getRows()
-                    .stream()
-                    .map(o -> objectMapper.convertValue(o, clazz))
-                    .toList());
+            if (apiBodyDTO.getData() != null) {
+                finalResponse.setData( objectMapper.convertValue(apiBodyDTO.getData(), PageQuery.class) );
+
+                finalResponse.getData().setRows( finalResponse.getData().getRows()
+                        .stream()
+                        .map(o -> objectMapper.convertValue(o, clazz))
+                        .toList());
+            }
 
             return finalResponse;
         } catch (Exception e) {
