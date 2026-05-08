@@ -1,12 +1,11 @@
 package io.github.ivansanchez16.apiresponses;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.ivansanchez16.logger.LogMethods;
 import io.github.ivansanchez16.logger.classes.ClientInfo;
 import lombok.RequiredArgsConstructor;
 import org.apache.logging.log4j.Level;
 import org.springframework.http.HttpStatusCode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * MetaGenerator
@@ -40,24 +39,18 @@ public class MetaGenerator {
         ClientInfo clientInfo = logMethods.getRequestInfoHelper().getClientInfoFromRequest();
         meta.setTransactionID(clientInfo.transactionUUID().toString());
 
-        try {
-            final String metaString = objectMapper.writeValueAsString(meta);
+        final String metaString = objectMapper.writeValueAsString(meta);
 
-            Environment env = Environment.getByValue( environmentConfig.getEnvironment() );
+        Environment env = Environment.getByValue( environmentConfig.getEnvironment() );
 
-            if ( env != null && env.equals(Environment.PRODUCTION) ){
-                return objectMapper.readerWithView(MetaView.External.class)
-                        .forType(Meta.class)
-                        .readValue(metaString);
-            }
-
-            return objectMapper.readerWithView(MetaView.Internal.class)
+        if ( env != null && env.equals(Environment.PRODUCTION) ){
+            return objectMapper.readerWithView(MetaView.External.class)
                     .forType(Meta.class)
                     .readValue(metaString);
-
-        } catch (JsonProcessingException e) {
-            logMethods.logException(Level.ERROR, e);
-            return meta;
         }
+
+        return objectMapper.readerWithView(MetaView.Internal.class)
+                .forType(Meta.class)
+                .readValue(metaString);
     }
 }

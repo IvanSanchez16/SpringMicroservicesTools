@@ -77,14 +77,15 @@ public class WebClientConsumer {
             }
         }
 
-        return new DefaultRequest(
+        DefaultRequest defaultRequest = new DefaultRequest(
                 webClient,
-                throwWebClientExceptions,
                 headers,
                 httpMethod,
                 uri,
                 logMethods
         );
+
+        return defaultRequest.throwWebClientExceptions(throwWebClientExceptions);
     }
 
 }

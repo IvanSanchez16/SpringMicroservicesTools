@@ -46,6 +46,16 @@ public interface Request {
     Request multipartBody(MultipartBodyBuilder builder);
 
     /**
+     * Método para personalizar el manejo de excepciones a la petición.
+     * Sirve para configurar si la excepción que ocurra al realizarse la petición se debe
+     * propagar o no
+     *
+     * @param throwWebClientExceptions Si la excepción se debe o no propagar
+     * @return el mismo objeto de petición con los valores asignados
+     */
+    Request throwWebClientExceptions(boolean throwWebClientExceptions);
+
+    /**
      * Método para ejecutar la petición y recibir la respuesta del data como un objeto
      *
      * @param clazz Objeto class de la clase para recibir el response
@@ -87,7 +97,7 @@ public interface Request {
      *
      * @return String con la respuesta de la petición
      */
-    String rawResponse();
+    <T> T rawResponse(Class<T> classType);
 
     /**
      * Método para ejecutar la petición pero la respuesta de la misma no se requiere.

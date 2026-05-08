@@ -1,6 +1,5 @@
 package io.github.ivansanchez16.apiresponses.webclient;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import io.github.ivansanchez16.apiresponses.ApiBodyDTO;
@@ -19,30 +18,31 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-
-import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
 
 @RequiredArgsConstructor
 class DefaultRequest implements Request {
 
     private final WebClient webClient;
-    private final boolean throwWebClientExceptions;
     private final HttpHeaders headers;
-
     private final HttpMethod httpMethod;
     private final String uri;
 
     private final LogMethods logMethods;
 
+    private boolean throwWebClientExceptions;
     private MediaType mediaType = MediaType.APPLICATION_JSON;
     private Object body;
     private MultipartBodyBuilder multipartBodyBuilder;
 
-    private final ObjectMapper objectMapper = new ObjectMapper()
-            .configure(FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper objectMapper = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
     private final Gson gson = new Gson();
 
     private static final String UNEXPECTED_RESPONSE_MESSAGE = "The api response body has different structure of object provided";
@@ -72,9 +72,15 @@ class DefaultRequest implements Request {
     }
 
     @Override
+    public Request throwWebClientExceptions(boolean throwWebClientExceptions) {
+        this.throwWebClientExceptions = throwWebClientExceptions;
+        return this;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <T> ApiBodyDTO<T> objectResponse(Class<T> clazz) {
-        final String response = makeRequest();
+        final String response = makeRequest(String.class);
 
         try {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
@@ -97,7 +103,7 @@ class DefaultRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public <T> ApiBodyDTO<List<T>> listResponse(Class<T> clazz) {
-        final String response = makeRequest();
+        final String response = makeRequest(String.class);
 
         try {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
@@ -126,7 +132,7 @@ class DefaultRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public <T> ApiBodyDTO<PageQuery<T>> pageableResponse(Class<T> clazz) {
-        final String response = makeRequest();
+        final String response = makeRequest(String.class);
 
         try {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
@@ -155,7 +161,7 @@ class DefaultRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public ApiBodyDTO<Void> noDataResponse() {
-        final String response = makeRequest();
+        final String response = makeRequest(String.class);
 
         try {
             final ApiBodyDTO<LinkedTreeMap<String, Object>> apiBodyDTO = gson.fromJson(response, ApiBodyDTO.class);
@@ -171,16 +177,16 @@ class DefaultRequest implements Request {
     }
 
     @Override
-    public String rawResponse() {
-        return makeRequest();
+    public <T> T rawResponse(Class<T> classType) {
+        return makeRequest(classType);
     }
 
     @Override
     public void ignoreResponse() {
-        makeRequest();
+        makeRequest(String.class);
     }
 
-    private String makeRequest() {
+    private <T> T makeRequest(Class<T> classType) {
         final WebClient.RequestHeadersSpec<?> requestObject;
 
         try {
@@ -195,11 +201,11 @@ class DefaultRequest implements Request {
             throw new MakeResponseException(e.getMessage(), e);
         }
 
-        String response;
+        T response;
         try {
             response = requestObject
                     .retrieve()
-                    .bodyToMono(String.class)
+                    .bodyToMono(classType)
                     .block();
 
             if (logMethods != null) {
@@ -216,6 +222,8 @@ class DefaultRequest implements Request {
 
                 logMethods.logEvent(new Event(header, rows));
             }
+
+            return response;
         } catch (WebClientResponseException ex) {
             // Create new exception object to get stacktrace
             WebClientResponseException webClientResponseException = new WebClientResponseException(
@@ -234,11 +242,17 @@ class DefaultRequest implements Request {
                 logMethods.logException(logLevel, webClientResponseException);
             }
 
-            if (throwWebClientExceptions) {
+            // If the request fails, and we try to grab the response with other class than string
+            // the exception is propagated ignoring the configuration
+            if (!classType.getName().equalsIgnoreCase("String")) {
                 throw webClientResponseException;
             }
 
-            response = ex.getResponseBodyAsString();
+            // Otherwise if its String we use the configuration to propagate the exception or return the response error
+            if (throwWebClientExceptions) {
+                throw webClientResponseException;
+            }
+            return (T) ex.getResponseBodyAsString();
         } catch (WebClientRequestException ex) {
             // Rethrow exception to get stacktrace
             final Exception newExp = new Exception( ex.getMessage() );
@@ -255,8 +269,6 @@ class DefaultRequest implements Request {
 
             throw webClientRequestException;
         }
-
-        return response;
     }
 
     private WebClient.RequestHeadersSpec<?> buildRequestWithoutBody() {

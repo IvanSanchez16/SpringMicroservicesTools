@@ -127,6 +127,19 @@ public class LogMethods {
         logger.info(SEPARADOR);
     }
 
+    public void logInfo(String info) {
+        String messageLog;
+
+        logger.info(SEPARADOR);
+        logger.info("INFORMATION LOG");
+
+        logOriginAndTransaction(Level.INFO);
+
+        logger.info( info );
+
+        logger.info(SEPARADOR);
+    }
+
     public RequestInfoHelper getRequestInfoHelper() {
         return requestInfoHelper;
     }
