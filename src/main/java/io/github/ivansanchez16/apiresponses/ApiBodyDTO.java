@@ -1,5 +1,6 @@
 package io.github.ivansanchez16.apiresponses;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.*;
 
 /**
@@ -9,6 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @Getter
 @Setter
+@JsonPropertyOrder({ "meta", "data" })
 public class ApiBodyDTO<T> {
 
     private Meta meta;
